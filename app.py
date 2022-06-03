@@ -20,9 +20,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:/
 app.config['PROPAGATE_EXCEPTIONS'] = True
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-@app.before_first_request
-def create_tables():
-    db.create_all()
+
 
 jwt = JWT(app, auth, identity)  #  /auth
     
