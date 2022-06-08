@@ -13,12 +13,12 @@ class Store(Resource):
     @jwt_required()
     def get(self, name):
         try:
-            item = StoreModel.find_by_name(name)
+            store = StoreModel.find_by_name(name)
         except:
             return {"message": "An error occurred getting the store."}, 500
 
-        if item:
-            return item.json(), 200
+        if store:
+            return store.json(), 200
         else:
             return {"message": "Store not found."}, 404
         

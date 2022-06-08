@@ -24,4 +24,20 @@ class UserRegister(Resource):
         except Exception as ex:
             return {"message": "An error occurred creating the user."}, 500
 
+class User(Resource):
+    @classmethod
+    def get(cls, user_id):
+        user = UserModel.find_by_id(user_id)
+        if not user:
+            return {'message': "User not found"}, 404
+        return user.json()
+
+    @classmethod
+    def delete(cls, user_id):
+        user = UserModel.find_by_id(user_id)
+        if not user:
+            return {'message': "User not found"}, 404
+        user.delete_from_db()
+        return {'message': 'User deleted'}, 200
+
         
