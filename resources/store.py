@@ -1,15 +1,9 @@
-from flask_restful import Resource, reqparse
-from flask_jwt import jwt_required
+from flask_restful import Resource
+from flask_jwt_extended import jwt_required
 from models.store import StoreModel
 
 
 class Store(Resource):
-    # parser = reqparse.RequestParser()
-    # parser.add_argument('price', 
-    #     type=float, 
-    #     required=True,
-    #     help="This field cannot be left blank!")
-
     @jwt_required()
     def get(self, name):
         try:

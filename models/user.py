@@ -1,3 +1,4 @@
+from email.policy import default
 from db import db
 
 
@@ -7,6 +8,7 @@ class UserModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80))
     password = db.Column(db.String(80))
+    is_admin = db.Column(db.Boolean, default=False)
 
     def __init__(self, username, password):
         self.username = username
@@ -15,7 +17,8 @@ class UserModel(db.Model):
     def json(self):
         return {
             'id': self.id,
-            'username': self.username
+            'username': self.username,
+            'admin': self.is_admin
         }
     
     def delete_from_db(self):
