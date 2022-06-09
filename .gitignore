@@ -3,3 +3,4 @@ data.db
 __pycache__/
 test.py
 .env
+run.py

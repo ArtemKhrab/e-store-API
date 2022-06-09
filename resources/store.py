@@ -2,27 +2,34 @@ from flask_restful import Resource
 from flask_jwt_extended import jwt_required
 from models.store import StoreModel
 
+NOT_FOUND_ERROR = "Store not found."
+ALREADY_EXISTS_ERROR = "Store already exists."
+DB_EXTRACTION_ERROR = "An error occurred '{}' store"
+DELETED_MSG = "Store deleted."
+
 
 class Store(Resource):
+    @classmethod
     @jwt_required()
-    def get(self, name):
+    def get(cls, name: str):
         try:
             store = StoreModel.find_by_name(name)
         except:
-            return {"message": "An error occurred getting the store."}, 500
+            return {"message": DB_EXTRACTION_ERROR.format("getting")}, 500
 
         if store:
             return store.json(), 200
         else:
-            return {"message": "Store not found."}, 404
-        
+            return {"message": NOT_FOUND_ERROR}, 404
+
+    @classmethod
     @jwt_required()
-    def post(self, name):
+    def post(cls, name: str):
         try:
             if StoreModel.find_by_name(name):
-                return {"message": "Store already exists."}, 400
+                return {"message": ALREADY_EXISTS_ERROR}, 400
         except:
-            return {"message": "An error occurred getting the store."}, 500 
+            return {"message": DB_EXTRACTION_ERROR.format("getting")}, 500
 
         store = StoreModel(name)
 
@@ -30,24 +37,25 @@ class Store(Resource):
             store.save_to_db()
             return store.json(), 201
         except:
-            return {"message": "An error occurred saving the store."}, 500 
+            return {"message": DB_EXTRACTION_ERROR.format("saving")}, 500
 
+    @classmethod
     @jwt_required()
-    def delete(self, name):
+    def delete(cls, name: str):
         store = StoreModel.find_by_name(name)
         if store:
             try:
                 store.delete_from_db()
             except:
-                return {"message": "An error occurred deleting the store."}, 500
-        return {'message': 'Store deleted.'}, 200
+                return {"message": DB_EXTRACTION_ERROR.format("deleting")}, 500
+        return {"message": DELETED_MSG}, 200
 
 
 class StoreList(Resource):
-    
+    @classmethod
     @jwt_required()
-    def get(self):
+    def get(cls):
         try:
-           return StoreModel.get_store_list(), 200
+            return StoreModel.get_store_list(), 200
         except:
-            return {"message": "An error occurred getting the store list."}, 500
+            return {"message": DB_EXTRACTION_ERROR.format("getting") + "list"}, 500
