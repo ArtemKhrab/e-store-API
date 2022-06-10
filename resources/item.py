@@ -1,5 +1,5 @@
 from flask_restful import Resource, request
-from flask_jwt_extended import jwt_required, get_jwt
+from flask_jwt_extended import jwt_required
 from models.item import ItemModel
 from schemas.item import ItemSchema
 

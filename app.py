@@ -1,4 +1,3 @@
-from logging.config import valid_ident
 import os
 from dotenv import load_dotenv
 
