@@ -1,33 +1,17 @@
-from typing import Dict, List, Union
+from typing import List
 
 from db import db
-
-ItemJSON = Dict[str, Union[int, str, float]]
-ItemJSONLIST = Dict[str, List[ItemJSON]]
 
 
 class ItemModel(db.Model):
     __tablename__ = "items"
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(80), unique=True)
-    price = db.Column(db.Float(precision=2))
+    name = db.Column(db.String(80), nullable=False, unique=True)
+    price = db.Column(db.Float(precision=2), nullable=False)
 
-    store_id = db.Column(db.Integer, db.ForeignKey("stores.id"))
+    store_id = db.Column(db.Integer, db.ForeignKey("stores.id"), nullable=False)
     store = db.relationship("StoreModel")
-
-    def __init__(self, name: str, price: float, store_id: int) -> None:
-        self.name = name
-        self.price = price
-        self.store_id = store_id
-
-    def json(self) -> ItemJSON:
-        return {
-            "id": self.id,
-            "name": self.name,
-            "price": self.price,
-            "store_id": self.store_id,
-        }
 
     @classmethod
     def find_by_name(cls, name: str) -> "ItemModel":
@@ -42,5 +26,5 @@ class ItemModel(db.Model):
         db.session.commit()
 
     @classmethod
-    def get_items_list(cls) -> ItemJSONLIST:
-        return {"items": [item.json() for item in ItemModel.query.all()]}
+    def get_all(cls) -> List["ItemModel"]:
+        return cls.query.all()

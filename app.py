@@ -1,20 +1,20 @@
+from logging.config import valid_ident
 import os
-from tkinter.tix import Tree
-from traceback import print_tb
 from dotenv import load_dotenv
 
 from flask import Flask, jsonify
 from flask_restful import Api
 from flask_jwt_extended import JWTManager
+from marshmallow import ValidationError
 from blacklist import BLACKLIST
-from models.user import UserModel
 
 from resources.item import Item, ItemsList
 from resources.user import UserLogout, UserRegister, User, UserLogin, TokenRefresh
 from resources.store import Store, StoreList
-
+from ma import ma
 
 from db import db
+
 
 load_dotenv()
 
@@ -26,7 +26,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
     "DATABASE_URL", "sqlite:///data.db"
 )
 app.config["PROPAGATE_EXCEPTIONS"] = True
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_TRveCK_MODIFICATIONS"] = False
 app.config["JWT_BLOCKLIST_ENABLE"] = True
 app.config["JWT_BLOCKLIST_TOKEN_CHECKS"] = ["access", "refresh"]
 
@@ -34,6 +34,11 @@ app.config["JWT_BLOCKLIST_TOKEN_CHECKS"] = ["access", "refresh"]
 @app.before_first_request
 def create_tables():
     db.create_all()
+
+
+@app.errorhandler(ValidationError)
+def handle_marshmallow_validation(err):
+    return jsonify(err.messages), 400
 
 
 jwt = JWTManager(app)
@@ -61,4 +66,5 @@ api.add_resource(UserLogout, "/logout")
 
 if __name__ == "__main__":
     db.init_app(app)
+    ma.init_app(app)
     app.run(debug=True)

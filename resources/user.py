@@ -1,15 +1,17 @@
 from blacklist import BLACKLIST
 from models.user import UserModel
-from flask_restful import Resource, reqparse, request
+from flask_restful import Resource, request
+from schemas.user import UserSchema
+
 from flask_jwt_extended import (
     create_access_token,
     create_refresh_token,
     jwt_required,
     get_jwt,
 )
+
 import hmac
 
-BLANK_ERROR = "'{}' cannot be left blank!"
 NOT_FOUND_ERROR = "User not found."
 ALREADY_EXISTS_ERROR = "User already exists."
 DB_EXTRACTION_ERROR = "An error occurred '{}' user"
@@ -18,24 +20,17 @@ LOGOUT_MSG = "Successfully logged out."
 INVALID_CREDS_ERROR_MSG = "Invalid creadentials"
 CREATED_SUCCESSFULLY = "User created successfully"
 
-parser = reqparse.RequestParser()
-parser.add_argument(
-    "username", type=str, required=True, help=BLANK_ERROR.format("username")
-)
-
-parser.add_argument(
-    "password", type=str, required=True, help=BLANK_ERROR.format("password")
-)
+user_schema = UserSchema()
 
 
 class UserRegister(Resource):
     @classmethod
     def post(cls):
-        request_data = parser.parse_args()
+        user_json = request.get_json()
+        user = user_schema.load(user_json)
 
-        if UserModel.find_by_username(request_data["username"]):
+        if UserModel.find_by_username(user.username):
             return {"message": ALREADY_EXISTS_ERROR}, 400
-        user = UserModel(**request_data)
         try:
             user.save_to_db()
             return {"message": CREATED_SUCCESSFULLY}, 201
@@ -50,7 +45,7 @@ class User(Resource):
         user = UserModel.find_by_id(user_id)
         if not user:
             return {"message": NOT_FOUND_ERROR}, 404
-        return user.json()
+        return user_schema.dump(user), 200
 
     @classmethod
     def delete(cls, user_id: int):
@@ -64,11 +59,15 @@ class User(Resource):
 class UserLogin(Resource):
     @classmethod
     def post(cls):
-        data = parser.parse_args()
-        user = UserModel.find_by_username(data["username"])
-        if user and hmac.compare_digest(user.password, data["password"]):
+        user_json = request.get_json()
+        user_data = user_schema.load(user_json)
+
+        user = UserModel.find_by_username(user_data.username)
+
+        if user and hmac.compare_digest(user.password, user_data.password):
             access_token = create_access_token(identity=user.id, fresh=True)
             refresh_token = create_refresh_token(user.id)
+
             return {"access_token": access_token, "refresh_token": refresh_token}, 200
 
         return {"message": INVALID_CREDS_ERROR_MSG}, 401

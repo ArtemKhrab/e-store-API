@@ -1,11 +1,15 @@
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required
 from models.store import StoreModel
+from schemas.store import StoreSchema
 
 NOT_FOUND_ERROR = "Store not found."
 ALREADY_EXISTS_ERROR = "Store already exists."
 DB_EXTRACTION_ERROR = "An error occurred '{}' store"
 DELETED_MSG = "Store deleted."
+
+store_schema = StoreSchema()
+store_list_schema = StoreSchema(many=True)
 
 
 class Store(Resource):
@@ -18,7 +22,7 @@ class Store(Resource):
             return {"message": DB_EXTRACTION_ERROR.format("getting")}, 500
 
         if store:
-            return store.json(), 200
+            return store_schema.dump(store), 200
         else:
             return {"message": NOT_FOUND_ERROR}, 404
 
@@ -35,7 +39,7 @@ class Store(Resource):
 
         try:
             store.save_to_db()
-            return store.json(), 201
+            return store_schema.dump(store), 201
         except:
             return {"message": DB_EXTRACTION_ERROR.format("saving")}, 500
 
@@ -56,6 +60,6 @@ class StoreList(Resource):
     @jwt_required()
     def get(cls):
         try:
-            return StoreModel.get_store_list(), 200
+            return {"stores": store_list_schema.dump(StoreModel.get_all())}, 200
         except:
             return {"message": DB_EXTRACTION_ERROR.format("getting") + "list"}, 500
