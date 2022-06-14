@@ -8,10 +8,16 @@ from marshmallow import ValidationError
 from blacklist import BLACKLIST
 
 from resources.item import Item, ItemsList
-from resources.user import UserLogout, UserRegister, User, UserLogin, TokenRefresh
+from resources.user import (
+    UserLogout, 
+    UserRegister, 
+    User, 
+    UserLogin, 
+    TokenRefresh, 
+    UserActivate) 
 from resources.store import Store, StoreList
-from ma import ma
 
+from ma import ma
 from db import db
 
 
@@ -62,6 +68,7 @@ api.add_resource(User, "/user/<int:user_id>")
 api.add_resource(UserLogin, "/login")
 api.add_resource(TokenRefresh, "/refresh")
 api.add_resource(UserLogout, "/logout")
+api.add_resource(UserActivate, "/userconfirm/<int:user_id>")
 
 if __name__ == "__main__":
     db.init_app(app)

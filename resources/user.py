@@ -1,6 +1,8 @@
+import traceback
 from blacklist import BLACKLIST
 from models.user import UserModel
 from flask_restful import Resource, request
+from flask import make_response, render_template
 from schemas.user import UserSchema
 
 from flask_jwt_extended import (
@@ -18,7 +20,11 @@ DB_EXTRACTION_ERROR = "An error occurred '{}' user"
 DELETED_MSG = "User deleted"
 LOGOUT_MSG = "Successfully logged out."
 INVALID_CREDS_ERROR_MSG = "Invalid creadentials"
-CREATED_SUCCESSFULLY = "User created successfully"
+CREATED_SUCCESSFULLY = "User created successfully, an email with an activation has been sent to your email."
+NOT_ACTIVATED_ERROR = "User is not confirmed. Please, check email <{}>"
+USER_CONFIRMED = "User confirmed."
+EMAIL_ALREADY_EXISTS_ERROR = "Email already exists."
+FAILED_TO_CREATE = "Failed to create user"
 
 user_schema = UserSchema()
 
@@ -31,11 +37,16 @@ class UserRegister(Resource):
 
         if UserModel.find_by_username(user.username):
             return {"message": ALREADY_EXISTS_ERROR}, 400
+
+        if UserModel.find_by_email(user.email):
+            return {"message": EMAIL_ALREADY_EXISTS_ERROR}, 400
         try:
             user.save_to_db()
+            user.send_confirmation_email()
             return {"message": CREATED_SUCCESSFULLY}, 201
         except:
-            return {"message": DB_EXTRACTION_ERROR.format("creating")}, 500
+            traceback.print_exc()
+            return {"message": FAILED_TO_CREATE}, 500
 
 
 class User(Resource):
@@ -65,11 +76,12 @@ class UserLogin(Resource):
         user = UserModel.find_by_username(user_data.username)
 
         if user and hmac.compare_digest(user.password, user_data.password):
-            access_token = create_access_token(identity=user.id, fresh=True)
-            refresh_token = create_refresh_token(user.id)
+            if user.is_activated:
+                access_token = create_access_token(identity=user.id, fresh=True)
+                refresh_token = create_refresh_token(user.id)
 
-            return {"access_token": access_token, "refresh_token": refresh_token}, 200
-
+                return {"access_token": access_token, "refresh_token": refresh_token}, 200
+            return {"message": NOT_ACTIVATED_ERROR.format(user.email)}, 400
         return {"message": INVALID_CREDS_ERROR_MSG}, 401
 
 
@@ -92,3 +104,16 @@ class TokenRefresh(Resource):
         cur_user = get_jwt()["sub"]
         new_token = create_access_token(identity=cur_user, fresh=False)
         return {"access_token": new_token}, 200
+
+
+class UserActivate(Resource):
+    @classmethod
+    def get(cls, user_id: int):
+        user = UserModel.find_by_id(user_id)
+        if not user:
+            return {"message": NOT_FOUND_ERROR}, 404
+        
+        user.is_activated = True
+        user.save_to_db
+        headers = {'Content-type': 'text/html'}
+        return make_response(render_template('confirmation_page.html', email=user.email), 200, headers)
