@@ -24,12 +24,10 @@ from db import db
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("key")
+app.secret_key = os.environ.get("SECRET_KEY")
 api = Api(app)
-
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
-    "DATABASE_URL", "sqlite:///data.db"
-)
+# print(os.environ.get("DATABASE_URL"))
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
 app.config["PROPAGATE_EXCEPTIONS"] = True
 app.config["SQLALCHEMY_TRveCK_MODIFICATIONS"] = False
 app.config["JWT_BLOCKLIST_ENABLE"] = True

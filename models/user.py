@@ -1,13 +1,7 @@
 from db import db
 from flask import request, url_for
 from requests import Response, post
-import os
-
-MAILGUN_DOMAIN = os.environ.get("MAILGUN_DOMAIN")
-MAILGUN_API_KEY = os.environ.get("MAILGUN_API_KEY")
-FROM_TITLE = os.environ.get("FROM_TITLE")
-FROM_EMAIL = os.environ.get("FROM_EMAIL")
-
+from libs.mailgun import Mailgun
 
 class UserModel(db.Model):
     __tablename__ = "users"
@@ -34,18 +28,10 @@ class UserModel(db.Model):
 
     def send_confirmation_email(self) -> Response:
         link = request.url_root[:-1] + url_for("useractivate", user_id=self.id)
-
-        return post(
-            f"https://api.mailgun.net/v3/{MAILGUN_DOMAIN}/messages",
-            auth=("api", MAILGUN_API_KEY),
-            data={
-                "from": f"{FROM_TITLE} <{FROM_EMAIL}>",
-                "to": f"<{self.email}>",
-                "subject": "Registration confirmation",
-                "text": f"Please click the link to confirm your registration: {link}",
-            }
-        )
-
+        subject = "Registration confirmation"
+        text = f"Please click the link to confirm your registration: {link}"
+        html = f'<html>Please click the link to confirm your registration: <a href="{link}">{link}</a></html>'
+        return Mailgun().send_email([self.email], subject, text, html)
 
     def save_to_db(self) -> None:
         db.session.add(self)

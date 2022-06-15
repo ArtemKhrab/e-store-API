@@ -1,4 +1,5 @@
 import traceback
+from libs.mailgun import MailgunException
 from blacklist import BLACKLIST
 from models.user import UserModel
 from flask_restful import Resource, request
@@ -44,6 +45,9 @@ class UserRegister(Resource):
             user.save_to_db()
             user.send_confirmation_email()
             return {"message": CREATED_SUCCESSFULLY}, 201
+        except MailgunException as e:
+            user.delete_from_db()
+            return {"message": str(e)}, 500
         except:
             traceback.print_exc()
             return {"message": FAILED_TO_CREATE}, 500
