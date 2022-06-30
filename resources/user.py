@@ -1,9 +1,10 @@
 import traceback
-from libs.mailgun import MailgunException
 from blacklist import BLACKLIST
-from models.user import UserModel
 from flask_restful import Resource, request
-from flask import make_response, render_template
+
+from models.confirmation import ConfirmationModel
+from libs.mailgun import MailgunException
+from models.user import UserModel
 from schemas.user import UserSchema
 
 from flask_jwt_extended import (
@@ -43,6 +44,8 @@ class UserRegister(Resource):
             return {"message": EMAIL_ALREADY_EXISTS_ERROR}, 400
         try:
             user.save_to_db()
+            confirmation = ConfirmationModel(user.id)
+            confirmation.save_to_db()
             user.send_confirmation_email()
             return {"message": CREATED_SUCCESSFULLY}, 201
         except MailgunException as e:
@@ -50,6 +53,7 @@ class UserRegister(Resource):
             return {"message": str(e)}, 500
         except:
             traceback.print_exc()
+            user.delete_from_db()
             return {"message": FAILED_TO_CREATE}, 500
 
 
@@ -80,11 +84,14 @@ class UserLogin(Resource):
         user = UserModel.find_by_username(user_data.username)
 
         if user and hmac.compare_digest(user.password, user_data.password):
-            if user.is_activated:
+            confirmation = user.most_recent_confirmation
+            if confirmation and confirmation.confirmed:
                 access_token = create_access_token(identity=user.id, fresh=True)
                 refresh_token = create_refresh_token(user.id)
-
-                return {"access_token": access_token, "refresh_token": refresh_token}, 200
+                return {
+                    "access_token": access_token,
+                    "refresh_token": refresh_token,
+                }, 200
             return {"message": NOT_ACTIVATED_ERROR.format(user.email)}, 400
         return {"message": INVALID_CREDS_ERROR_MSG}, 401
 
@@ -108,16 +115,3 @@ class TokenRefresh(Resource):
         cur_user = get_jwt()["sub"]
         new_token = create_access_token(identity=cur_user, fresh=False)
         return {"access_token": new_token}, 200
-
-
-class UserActivate(Resource):
-    @classmethod
-    def get(cls, user_id: int):
-        user = UserModel.find_by_id(user_id)
-        if not user:
-            return {"message": NOT_FOUND_ERROR}, 404
-        
-        user.is_activated = True
-        user.save_to_db
-        headers = {'Content-type': 'text/html'}
-        return make_response(render_template('confirmation_page.html', email=user.email), 200, headers)

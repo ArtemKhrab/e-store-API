@@ -9,12 +9,13 @@ from blacklist import BLACKLIST
 
 from resources.item import Item, ItemsList
 from resources.user import (
-    UserLogout, 
-    UserRegister, 
-    User, 
-    UserLogin, 
-    TokenRefresh, 
-    UserActivate) 
+    UserLogout,
+    UserRegister,
+    User,
+    UserLogin,
+    TokenRefresh
+)
+from resources.confirmation import Confirmation, ConfriamtionByUser
 from resources.store import Store, StoreList
 
 from ma import ma
@@ -66,7 +67,8 @@ api.add_resource(User, "/user/<int:user_id>")
 api.add_resource(UserLogin, "/login")
 api.add_resource(TokenRefresh, "/refresh")
 api.add_resource(UserLogout, "/logout")
-api.add_resource(UserActivate, "/userconfirm/<int:user_id>")
+api.add_resource(Confirmation, "/user_confirm/<string:confirmation_id>")
+api.add_resource(ConfriamtionByUser, "/confirmation/user/<int:user_id>")
 
 if __name__ == "__main__":
     db.init_app(app)

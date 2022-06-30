@@ -18,7 +18,9 @@ class Mailgun:
     FROM_TITLE = "Mailgun Sandbox"
     FROM_EMAIL = "postmaster@sandbox6920922dd18e4736bc90a41e1d8a0ea9.mailgun.org"
 
-    def send_email(self, email: List[str], subject: str, text: str, html: str) -> Response:
+    def send_email(
+        self, email: List[str], subject: str, text: str, html: str
+    ) -> Response:
         if self.MAILGUN_API_KEY is None:
             raise MailgunException(FAILED_LOAD_API_KEY)
         if self.MAILGUN_DOMAIN is None:
@@ -26,14 +28,14 @@ class Mailgun:
 
         response = post(
             f"https://api.mailgun.net/v3/{self.MAILGUN_DOMAIN}/messages",
-                auth=("api", self.MAILGUN_API_KEY),
-                data={
-                    "from": f"{self.FROM_TITLE} <{self.FROM_EMAIL}>",
-                    "to": email,
-                    "subject": subject,
-                    "text": text,
-                    "html": html,
-                },
+            auth=("api", self.MAILGUN_API_KEY),
+            data={
+                "from": f"{self.FROM_TITLE} <{self.FROM_EMAIL}>",
+                "to": email,
+                "subject": subject,
+                "text": text,
+                "html": html,
+            },
         )
 
         if response.status_code != 200:
